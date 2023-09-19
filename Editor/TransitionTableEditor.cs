@@ -8,17 +8,7 @@ using UnityEngine;
 
 namespace Assets.StateMachine
 {
-    /*
-     * UX NOTE:
-     * The Asset picker doesn't work because types are of Generics.
-     * For example we have DataModelAction : Action<DataModel>.
-     * In the inspector we are asking for a Action<DataModel> field, and because of that
-     * we can drag a DataModelAction into the field. But if we try to use the asset picker, it will found nothing
-     * because it's searching for a Action<DataModel> but can't find it because assets are only DataModelAction.
-     * A cool thing would be to display all current asset that are subtypes of Action<DataModel>, but there's no
-     * such a feature for the asset picker right now.
-     * UX "fix": get a square with "Drag [class name] here to add" and avoid using the asset picker ):
-     */
+    
     [CustomEditor(typeof(TransitionTableBase), true)]
     public class TransitionTableEditor : Editor
     {
@@ -158,7 +148,8 @@ namespace Assets.StateMachine
             {
                 drawElementCallback = DrawStateToStateEntry,
                 drawHeaderCallback = (rect) => GUI.Label(rect, "State to state transitions:"),
-                onChangedCallback = (list) => { Debug.Log($"Changed: Filtered List has {list.count} items."); },  // TODO: Add handler to update full list with added/removed from filtered              
+                onChangedCallback = (list) => { Debug.Log($"Changed: Filtered List has {list.count} items."); },  // TODO: Trigger event with full list with added/removed from filtered
+                                                                                                                  // Handlers should always be separate from origin of event
             };
         }
 
