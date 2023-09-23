@@ -7,7 +7,7 @@ using Packages.Estenis.UnityExts_;
 
 namespace Packages.Estenis.StateMachine_
 {
-    [CreateAssetMenu(menuName = "EventFSM/TransitionTable")]
+    [CreateAssetMenu(menuName = "EventsFSM/TransitionTable")]
     public sealed class TransitionTable : TransitionTableBase
     {
         public State AnyState { get; private set; }
