@@ -13,7 +13,7 @@ namespace Packages.Estenis.StateMachine_
         [SerializeField] private GameObject _statesParentGO;
         [SerializeField] private TransitionTable _transitionTable;
         [SerializeField] private GameDataSOData _stateData;
-        [SerializeField] private StringSOData _transitionEvent;
+        [SerializeField] private StringSOData _transitionEventName;
         [SerializeField] private GameObject[] _alwaysOnStates;
         [SerializeField] private GameObject[] _disabledOnTransitionGO;
 
@@ -43,9 +43,9 @@ namespace Packages.Estenis.StateMachine_
             {
                 _stateData.Data = (data as GameDataNamedAggregate).Data;
             }
-            if(_transitionEvent != null)
+            if(_transitionEventName != null)
             {
-                _transitionEvent.Data = (data as GameDataNamedAggregate).EventName;
+                _transitionEventName.Data = (data as GameDataNamedAggregate).EventName;
             }
             // disable all 
             DisableAllStatesGO();
