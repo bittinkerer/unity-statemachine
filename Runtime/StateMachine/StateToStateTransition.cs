@@ -9,7 +9,7 @@ namespace Packages.Estenis.StateMachine_
         public int Index;
         public State FromState;
         public State ToState;
-        public GameEventGameData GameEvent;
+        public GameEventObject GameEvent;
 
         //Check if a entry has been left incomplete in the inspector
         public bool IsValid() => FromState != null && ToState != null;

@@ -1,9 +1,8 @@
-﻿using Packages.Estenis.GameData_;
-using Packages.Estenis.GameEvent_;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using Packages.Estenis.UnityExts_;
+using System;
 
 namespace Packages.Estenis.StateMachine_
 {
@@ -13,7 +12,6 @@ namespace Packages.Estenis.StateMachine_
         public State AnyState { get; private set; }
         public State InitialState { get; private set; }
         private Dictionary<State, HashSet<Transition>> _transitions = new();
-        public EventHandlerWrapper<GameData> OnTransitionEvent = new();
 
         protected override void Initialize(State initialState, List<StateToStateTransition> stateToState)
         {
@@ -25,16 +23,17 @@ namespace Packages.Estenis.StateMachine_
                 State to        = entry.ToState;
                 var gameEvent   = entry.GameEvent;
 
-                var transition  = new Transition(from, to, gameEvent, OnTransitionEvent);
+                var transition  = new Transition(from, to, gameEvent);
                 AddTransition(from, transition);
             }
         }
 
-        public void Register(int clientId)
+        public void Register(int clientId, Action<object, object> action)
         {
             foreach (var transition in _transitions.SelectMany(t => t.Value).Where(t => t.CurrentState == InitialState || t.CurrentState == _anyState))
             {
-                transition.Activate(clientId); 
+                // NOTE: must override sender (original object that triggered event) with Transition for StateMachine
+                transition.TransitionEvent.Register(clientId, (sender,data) => action(transition, data)); 
             } 
         }
 
@@ -42,28 +41,27 @@ namespace Packages.Estenis.StateMachine_
         /// Remove the client handler from all transitions 
         /// </summary>
         /// <param name="clientId"></param>
-        public void Remove(int clientId)
+        public void Unregister(int clientId, Action<object, object> action)
         {
             foreach (var transition in _transitions.SelectMany(t => t.Value))
             {
-                transition.Remove(clientId);
+                transition.TransitionEvent.Unregister(clientId, (sender, data) => action(transition, data));
             }
         }
 
-        public void OnStateChanged(int clientId, State newState)
+        public void OnStateChanged(int clientId, State newState, Action<object, object> action)
         {
-            
             // Deactivate all except AnyState
             foreach (var transition in _transitions.Where(t => t.Key != _anyState).Select(kvp => kvp.Value).SelectMany(v => v))
             {
-                transition.Deactivate(clientId);
+                transition.TransitionEvent.Unregister(clientId, (sender, data) => action(transition, data));
             }
 
             // Activate current
             _transitions
                 .Where(kvp => kvp.Key == newState)
                 .SelectMany(kvp => kvp.Value)
-                .ForEach(t => t.Activate(clientId));
+                .ForEach(t => t.TransitionEvent.Register(clientId, (sender, data) => action(t, data)));
             
         }
 

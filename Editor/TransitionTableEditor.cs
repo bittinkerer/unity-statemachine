@@ -197,7 +197,7 @@ namespace Assets.StateMachine
 
             EditorGUIUtility.labelWidth = rect.width / 20f + 5;
             gameEvent.objectReferenceValue =
-                EditorGUI.ObjectField(whenRect, " when", gameEvent.objectReferenceValue, typeof(GameEventGameData), false);
+                EditorGUI.ObjectField(whenRect, " when", gameEvent.objectReferenceValue, typeof(GameEventObject), false);
 
             EditorGUIUtility.labelWidth = labelWidth;
         }

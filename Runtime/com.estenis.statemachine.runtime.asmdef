@@ -2,7 +2,6 @@
     "name": "_StateMachineRuntime",
     "rootNamespace": "",
     "references": [
-        "GUID:f1d9f6b7857545d43a711d1effceb363",
         "GUID:5e95f0768a6f5a143b06f6581af40f9f",
         "GUID:950a5a989d74f114d99f2262765a2521",
         "GUID:e18253e976282a84da48c03dce8b881b"

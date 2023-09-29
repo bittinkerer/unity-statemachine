@@ -1,15 +1,13 @@
-﻿using Packages.Estenis.GameData_;
-using Packages.Estenis.GameEvent_;
+﻿using Packages.Estenis.GameEvent_;
 using Packages.Estenis.ScriptableObjectsData_;
-using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
 namespace Packages.Estenis.StateMachine_
 {
-    public class StateManager : MonoBehaviour
+    public class StateManager : EventMonoBehaviour
     {
-        [SerializeField] private GameEventGameData _stateChangeEvent;
+        [SerializeField] private GameEvent<Transition> _stateChangeEvent;
         [SerializeField] private GameObject _statesParentGO;
         [SerializeField] private TransitionTable _transitionTable;
         [SerializeField] private GameDataSOData _stateData;
@@ -27,30 +25,20 @@ namespace Packages.Estenis.StateMachine_
             EnableStateGO(_transitionTable.InitialState.name);
 
             // register to state change event
-            _stateChangeEvent.Register(this.gameObject.GetHashCode(), OnStateChanged);
+            _stateChangeEvent.Register(EventId, OnStateChanged);
         }
 
-        private void OnStateChanged(GameData data)
+        private void OnStateChanged(object sender, Transition transition)
         {
-            //var dataVal = (data as FSMDataString).Data;
-            string state = (data as GameDataNamedAggregate).Name;
-
-            if (this.name == "Wolf")
-            {
-                //Debug.LogWarning($"{Time.time} {this.name} State has changed to {state}");
-            }
-            if (_stateData != null)
-            {
-                _stateData.Data = (data as GameDataNamedAggregate).Data;
-            }
+            
             if(_transitionEventName != null)
             {
-                _transitionEventName.Data = (data as GameDataNamedAggregate).EventName;
+                _transitionEventName.Data = transition.TransitionEvent.name;
             }
             // disable all 
             DisableAllStatesGO();
             // enable selected state GO
-            EnableStateGO(state);
+            EnableStateGO(transition.NextState.name);
         }
 
         private void EnableStateGO(string state)
