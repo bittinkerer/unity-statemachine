@@ -26,7 +26,7 @@ namespace Packages.Estenis.StateMachine_
         {
             if (!_transitionDonePerFrame)
             {
-                if (sender is not Transition transition)
+                if (sender is not Transition transition) 
                 {
                     Debug.LogError($"{data.GetType()} needs to be a {nameof(Transition)} type.");
                     return;
