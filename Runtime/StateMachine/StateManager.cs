@@ -1,5 +1,6 @@
 ﻿using Packages.Estenis.GameEvent_;
 using Packages.Estenis.ScriptableObjectsData_;
+using System;
 using System.Linq;
 using UnityEngine;
 
@@ -25,7 +26,7 @@ namespace Packages.Estenis.StateMachine_
             EnableStateGO(_transitionTable.InitialState.name);
 
             // register to state change event
-            _stateChangeEvent.Register(EventId, OnStateChanged);
+            _stateChangeEvent.Register(EventId, (Action<object,Transition>)OnStateChanged);
         }
 
         private void OnStateChanged(object sender, Transition transition)
