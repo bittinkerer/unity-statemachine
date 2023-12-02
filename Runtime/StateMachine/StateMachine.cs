@@ -16,6 +16,11 @@ namespace Packages.Estenis.StateMachine_
             _transitionTable.Register(EventId, _transitionTable_OnTransition);
         }
 
+        private void OnEnable()
+        {
+            _currentState = _transitionTable.InitialState;
+        }
+
         private void OnDestroy()
         {
             // unregister...

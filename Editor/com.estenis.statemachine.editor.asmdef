@@ -2,7 +2,6 @@
     "name": "_StateMachineEditor",
     "rootNamespace": "",
     "references": [
-        "GUID:f1d9f6b7857545d43a711d1effceb363",
         "GUID:5e95f0768a6f5a143b06f6581af40f9f",
         "GUID:950a5a989d74f114d99f2262765a2521",
         "GUID:09047547a9a92394d81d1e7563c2ad89"
