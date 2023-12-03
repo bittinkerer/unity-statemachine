@@ -40,7 +40,12 @@ namespace Packages.Estenis.StateMachine_
             transitions.Add(transition); // transitions is a reference to the HashSet inside the _transitions dictionary
         }
 
-        public void Register(int instanceId, Action<object,object> action)
+        /// <summary>
+        /// For each active transition, register callback with corresponding instanceId
+        /// </summary>
+        /// <param name="instanceId">match transition events matching this instanceId</param>
+        /// <param name="callback">callback for transition event</param>
+        public void Register(int instanceId, Action<object,object> callback)
         {
             foreach (var transition in _transitions
                                 .SelectMany(t => t.Value)
@@ -51,7 +56,7 @@ namespace Packages.Estenis.StateMachine_
                     instanceId, 
                     new ActionWrapper<object, object>(
                         transition.Id,
-                        (sender, data) => action(transition, data)));
+                        (sender, data) => callback(transition, data)));
             } 
         }
 
