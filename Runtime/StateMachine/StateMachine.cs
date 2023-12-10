@@ -52,7 +52,7 @@ namespace Packages.Estenis.StateMachine_
 
                 if(_logStateTransition)
                 {
-                    Debug.Log($"Transition: {transition.CurrentState.name} -> {transition.NextState.name}");
+                    Debug.Log($"Transition [{Time.time}]: {transition.CurrentState.name} -> {transition.NextState.name}");
                 }
 
                 _currentState = transition.NextState;
