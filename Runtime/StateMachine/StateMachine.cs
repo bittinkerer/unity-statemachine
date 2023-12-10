@@ -11,6 +11,7 @@ namespace Packages.Estenis.StateMachine_
         [SerializeField] private GameEvent<Transition> _onStateChangedEvent;
         [SerializeField] private bool _resetOnDisabled;
         [SerializeField] private GameEventObject _onResetEvent;
+        [SerializeField] private bool _logStateTransition;
 
         private void Awake()
         {
@@ -48,6 +49,12 @@ namespace Packages.Estenis.StateMachine_
                     Debug.LogError($"{nameof(sender)} needs to be of type, '{nameof(Transition)}'.");
                     return;
                 }
+
+                if(_logStateTransition)
+                {
+                    Debug.Log($"Transition: {transition.CurrentState.name} -> {transition.NextState.name}");
+                }
+
                 _currentState = transition.NextState;
                 _onStateChangedEvent.Raise(EventId, this, transition);
                 _transitionTable.OnStateChanged(EventId, transition.NextState, _transitionTable_OnTransition);

@@ -12,7 +12,6 @@ namespace Packages.Estenis.StateMachine_
         [SerializeField] private GameObject _statesParentGO;
         [SerializeField] private TransitionTable _transitionTable;
         [SerializeField] private GameDataSOData _stateData;
-        [SerializeField] private StringSOData _transitionEventName;
         [SerializeField] private GameObject[] _alwaysOnStates;
         [SerializeField] private GameObject[] _disabledOnTransitionGO;
 
@@ -31,11 +30,6 @@ namespace Packages.Estenis.StateMachine_
 
         private void OnStateChanged(object sender, Transition transition)
         {
-            
-            if(_transitionEventName != null)
-            {
-                _transitionEventName.Data = transition.TransitionEvent.name;
-            }
             // disable all 
             DisableAllStatesGO();
             // enable selected state GO
