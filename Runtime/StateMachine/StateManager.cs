@@ -10,6 +10,7 @@ namespace Packages.Estenis.StateMachine_
     {
         [SerializeField] private GameEvent<Transition> _stateChangeEvent;
         [SerializeField] private GameObject _statesParentGO;
+        [SerializeField] private GameObject _sharedParentGO;
         [SerializeField] private TransitionTable _transitionTable;
         [SerializeField] private GameDataSOData _stateData;
         [SerializeField] private GameObject[] _alwaysOnStates;
@@ -44,7 +45,11 @@ namespace Packages.Estenis.StateMachine_
 
         private void DisableAllStatesGO()
         {
-            foreach (var item in _statesParentGO.transform)
+            var statesParentTransforms = _sharedParentGO == null
+                ? _statesParentGO.transform.Cast<Transform>()
+                : _sharedParentGO.transform.Cast<Transform>().Concat(_statesParentGO.transform.Cast<Transform>());
+
+            foreach (var item in statesParentTransforms)
             {
                 if (!_alwaysOnStates.Any(go => go.transform == (Transform)item))
                 {
