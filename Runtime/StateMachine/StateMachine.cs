@@ -1,4 +1,5 @@
 ﻿using Packages.Estenis.GameEvent_;
+using Packages.Estenis.ScriptableObjectsData_;
 using UnityEngine;
 
 namespace Packages.Estenis.StateMachine_
@@ -12,6 +13,7 @@ namespace Packages.Estenis.StateMachine_
         [SerializeField] private bool _resetOnDisabled;
         [SerializeField] private GameEventObject _onResetEvent;
         [SerializeField] private bool _logStateTransition;
+        [SerializeField] private ObjectSOData _stateData;
 
         private void Awake()
         {
@@ -53,6 +55,12 @@ namespace Packages.Estenis.StateMachine_
                 if(_logStateTransition)
                 {
                     Debug.Log($"Transition [{Time.time}]: {transition.CurrentState.name} -> {transition.NextState.name}");
+                }
+
+                // Set state data
+                if (_stateData != null)
+                {
+                    _stateData.Data = data;
                 }
 
                 _currentState = transition.NextState;
