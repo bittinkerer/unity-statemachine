@@ -15,11 +15,15 @@ namespace Packages.Estenis.StateMachine_
 
 		private void OnEnable()
 		{
-			if (EditorApplication.isPlayingOrWillChangePlaymode || Application.isPlaying)
-				Initialize(_onEnter, _onExit, _onUpdate);
-		}
+#if UNITY_EDITOR
+            if (EditorApplication.isPlayingOrWillChangePlaymode || Application.isPlaying)
+                Initialize(_onEnter, _onExit, _onUpdate);
+#else
+			Initialize(_onEnter, _onExit, _onUpdate);
+#endif
+        }
 
-		protected abstract void Initialize(List<Object> onEnter, List<Object> onExit, List<Object> onUpdate);
+        protected abstract void Initialize(List<Object> onEnter, List<Object> onExit, List<Object> onUpdate);
 
 		public abstract Type GetActionType();
 	}
