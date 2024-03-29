@@ -15,11 +15,16 @@ namespace Packages.Estenis.StateMachine_
 
 		private void OnEnable()
 		{
+#if UNITY_EDITOR
 			if (EditorApplication.isPlayingOrWillChangePlaymode || Application.isPlaying)
 			{
+#endif
 				Initialize(_initialState, _stateToStateEntries);
-			}
-		}
+#if UNITY_EDITOR
+            }
+#endif
+
+        }
 		protected abstract void Initialize(State initialState, List<StateToStateTransition> sts);
 	}
 
