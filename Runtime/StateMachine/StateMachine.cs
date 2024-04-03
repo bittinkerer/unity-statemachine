@@ -52,7 +52,13 @@ namespace Packages.Estenis.StateMachine_
                     return;
                 }
 
-                if(_logStateTransition)
+                if (_currentState.name == transition.NextState.name)
+                {
+                    Debug.LogWarning($"Trying to transition through same states is NOT supported. Transition from {_currentState.name}->{transition.NextState.name} cancelled.");
+                    return;
+                }
+
+                if (_logStateTransition)
                 {
                     Debug.Log($"Transition [{Time.time}]: {transition.CurrentState.name} -> {transition.NextState.name}");
                 }
