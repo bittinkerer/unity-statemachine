@@ -8,13 +8,11 @@ namespace Packages.Estenis.StateMachine_
 {
     public class StateManager : EventMonoBehaviour
     {
-        [SerializeField] private GameEvent<Transition> _stateChangeEvent;
+        [SerializeField] private GameEventObject _stateChangeEvent;
         [SerializeField] private GameObject _statesParentGO;
         [SerializeField] private GameObject _sharedParentGO;
         [SerializeField] private TransitionTable _transitionTable;
         [SerializeField] private GameObject[] _alwaysOnStates;
-        [SerializeField] private GameObject[] _disabledOnTransitionGO;
-
 
         private void Start()
         {
@@ -25,16 +23,19 @@ namespace Packages.Estenis.StateMachine_
             EnableStateGO(_transitionTable.InitialState.name);
 
             // register to state change event
-            _stateChangeEvent.Register(EventId, (Action<object,Transition>)OnStateChanged);
+            _stateChangeEvent.Register(EventId, (Action<object,object>)OnStateChanged);
         }
 
-        private void OnStateChanged(object sender, Transition transition)
+        private void OnStateChanged(object sender, object next)
         {
-            
+            if(next is not State nextState)
+            {
+                return;
+            }
             // disable all 
             DisableAllStatesGO();
             // enable selected state GO
-            EnableStateGO(transition.NextState.name);
+            EnableStateGO(nextState.name);
         }
 
         private void EnableStateGO(string state)
@@ -57,16 +58,7 @@ namespace Packages.Estenis.StateMachine_
                 }
             }
 
-            foreach (var go in _disabledOnTransitionGO)
-            {
-                foreach (var item in go.transform)
-                {
-                    if (!_alwaysOnStates.Any(go => go.transform == (Transform)item))
-                    {
-                        (item as Transform).gameObject.SetActive(false);
-                    }
-                }
-            }
+            
         }
     }
 }

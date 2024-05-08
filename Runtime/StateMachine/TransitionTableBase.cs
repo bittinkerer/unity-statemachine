@@ -16,7 +16,7 @@ namespace Packages.Estenis.StateMachine_
 		private void OnEnable()
 		{
 #if UNITY_EDITOR
-			if (EditorApplication.isPlayingOrWillChangePlaymode || Application.isPlaying)
+			if (EditorApplication.isPlayingOrWillChangePlaymode || Application.isPlaying || EditorSettings.enterPlayModeOptions == EnterPlayModeOptions.DisableDomainReload)
 			{
 #endif
 				Initialize(_initialState, _stateToStateEntries);
