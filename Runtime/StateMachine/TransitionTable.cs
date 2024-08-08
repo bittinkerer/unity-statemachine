@@ -54,7 +54,7 @@ namespace Packages.Estenis.StateMachine_
                 // NOTE: must override sender (original object that triggered event) with Transition for StateMachine
                 transition.TransitionEvent.Register(
                     instanceId, 
-                    new ActionWrapper<object, object>(
+                    new ActionWrapper<GameObject, object>(
                         transition.Id,
                         (sender, data) => callback(transition, data)));
             } 
@@ -70,7 +70,7 @@ namespace Packages.Estenis.StateMachine_
             {
                 transition.TransitionEvent.Unregister(
                     instanceId, 
-                    new ActionWrapper<object, object>(
+                    new ActionWrapper<GameObject, object>(
                         transition.Id,
                         (sender,data) => action(transition, data)));
             }
@@ -87,7 +87,7 @@ namespace Packages.Estenis.StateMachine_
                 //transition.Deactivate(instanceId);
                 transition.TransitionEvent.Unregister(
                     instanceId, 
-                    new ActionWrapper<object, object>(
+                    new ActionWrapper<GameObject, object>(
                         transition.Id,
                         (sender,data) => action(transition, data)));
             }
@@ -98,7 +98,7 @@ namespace Packages.Estenis.StateMachine_
                 .SelectMany(kvp => kvp.Value)
                 .ForEach(t => t.TransitionEvent.Register(
                     instanceId, 
-                    new ActionWrapper<object, object>(t.Id, (sender,data) => action(t, data))));
+                    new ActionWrapper<GameObject, object>(t.Id, (sender,data) => action(t, data))));
         }
 
     }

@@ -40,6 +40,12 @@ namespace Packages.Estenis.StateMachine_
 
         private void EnableStateGO(string state)
         {
+            var initialState = _statesParentGO.transform.Find(state);
+            if(initialState == null)
+            {
+                Debug.LogError($"[{this.name}] Could not find Initial State {state}. Aborting.");
+                return;
+            }
             var stateGO = _statesParentGO.transform.Find(state).gameObject;
             stateGO.SetActive(true);
         }
