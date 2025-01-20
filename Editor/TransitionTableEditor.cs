@@ -30,7 +30,7 @@ namespace Assets.StateMachine
       ANY
     }
 
-    private void OnEnable()
+    protected void OnEnable()
     {
       _target = (TransitionTableBase)serializedObject.targetObject;
 
@@ -43,8 +43,20 @@ namespace Assets.StateMachine
           true, true, true, true)
       {
         drawElementCallback = DrawStateToStateEntry,
-        drawHeaderCallback = (rect) => GUI.Label(rect, "State to state transitions:"),
+        drawHeaderCallback = DrawTTableHeader,
       };
+    }
+
+    private void DrawTTableHeader(Rect rect)
+    {
+      string from = "FROM";
+      string to = "| TO";
+      string when = "| WHEN";
+      
+      GUI.Label(new Rect(rect.x, rect.y, rect.width/3, rect.height), from);
+      GUI.Label(new Rect(rect.x + rect.width / 3, rect.y, rect.width / 3, rect.height), $"{to, 10}");
+      GUI.Label(new Rect(rect.x + 2 * (rect.width / 3), rect.y, rect.width / 3, rect.height), $"{when,10}");
+      GUI.Label(new Rect(rect.x + rect.width - 30, rect.y, 30, rect.height), $"{_stateToStateList.count, 2}");
     }
 
     public override void OnInspectorGUI()
@@ -56,7 +68,6 @@ namespace Assets.StateMachine
       DrawInspector();
       SaveFilteredChanges();
       serializedObject.ApplyModifiedProperties(); //save changes
-                                                  //serializedObject.ApplyModifiedPropertiesWithoutUndo(); //add support for undo
       EditorGUI.EndDisabledGroup();
 
       if (playing)
@@ -73,19 +84,33 @@ namespace Assets.StateMachine
           EditorGUILayout.ObjectField(
               "Any State: ", _anyState.objectReferenceValue, typeof(Packages.Estenis.StateMachine_.State), false);
 
+      // Draw Filtering Options
       GUILayout.BeginHorizontal();
       {
         var sixthWidth = EditorGUIUtility.currentViewWidth / 6;
         //EditorGUILayout.LabelField("Filter", GUILayout.Width(sixthWidth));
         _popupIndex = EditorGUILayout.Popup(
           _popupIndex, 
-          Enum.GetNames(typeof(TransitionType)).Select(s => new GUIContent(s)).ToArray(), GUILayout.Width(sixthWidth * 1 - 3));
+          Enum.GetNames(typeof(TransitionType)).Select(s => new GUIContent(s)).ToArray(), 
+          GUILayout.Width(sixthWidth * 1 - 3));
         //GUILayout.Space(sixthWidth*1.375f);
         _filter = EditorGUILayout.TextField(_filter, GUILayout.Width(sixthWidth * 5 - 10));
       }
       GUILayout.EndHorizontal();
 
-      EditorGUILayout.Space(10);
+      GUILayout.BeginHorizontal();
+      {
+        if(GUI.Button(new Rect(18,70,50,25), "Sort"))
+        {
+          _target._stateToStateEntries = 
+            _target._stateToStateEntries.OrderBy(s2sTransition => s2sTransition.FromState.name).ToList();
+          
+        }
+      }
+      GUILayout.EndHorizontal();
+
+      EditorGUILayout.Space(40);
+      // Draw Transition Table
       if (!string.IsNullOrWhiteSpace(_filter) && (_popupIndex != _previousTransitionType || _filter != _previousFilter))
       {
         UpdateFiltered();
@@ -98,7 +123,7 @@ namespace Assets.StateMachine
              true, true, true, true)
         {
           drawElementCallback = DrawStateToStateEntry,
-          drawHeaderCallback = (rect) => GUI.Label(rect, "State to state transitions:")
+          drawHeaderCallback = DrawTTableHeader
         };
         _target._filteredStates = new StateToStateTransition[0];
 
@@ -182,29 +207,31 @@ namespace Assets.StateMachine
     {
       SerializedProperty element = _stateToStateList.serializedProperty.GetArrayElementAtIndex(index);
 
-      SerializedProperty fromState = element.FindPropertyRelative("FromState");
-      SerializedProperty toState = element.FindPropertyRelative("ToState");
-      SerializedProperty gameEvent = element.FindPropertyRelative("GameEvent");
+      SerializedProperty fromState  = element.FindPropertyRelative("FromState");
+      SerializedProperty toState    = element.FindPropertyRelative("ToState");
+      SerializedProperty gameEvent  = element.FindPropertyRelative("GameEvent");
 
       rect.y += 2;
       float fieldWidth = rect.width / 3f;
 
-      Rect fromRect = new Rect(rect.x, rect.y, fieldWidth, EditorGUIUtility.singleLineHeight);
-      Rect toRect = new Rect(rect.x + fieldWidth, rect.y, fieldWidth, EditorGUIUtility.singleLineHeight);
-      Rect whenRect = new Rect(rect.x + fieldWidth * 2f, rect.y, fieldWidth, EditorGUIUtility.singleLineHeight);
+      Rect fromRect = new(rect.x,                   rect.y, fieldWidth, EditorGUIUtility.singleLineHeight);
+      Rect toRect   = new(rect.x + fieldWidth,      rect.y, fieldWidth, EditorGUIUtility.singleLineHeight);
+      Rect whenRect = new(rect.x + fieldWidth * 2f, rect.y, fieldWidth, EditorGUIUtility.singleLineHeight);
 
       float labelWidth = EditorGUIUtility.labelWidth;
-      EditorGUIUtility.labelWidth = rect.width / 21f;
+      EditorGUIUtility.labelWidth = rect.width / 23f;
 
       fromState.objectReferenceValue =
-          EditorGUI.ObjectField(fromRect, "from", fromState.objectReferenceValue, typeof(Packages.Estenis.StateMachine_.State), false);
+          EditorGUI.ObjectField(
+            fromRect, "", fromState.objectReferenceValue, typeof(Packages.Estenis.StateMachine_.State), false);
 
       toState.objectReferenceValue =
-          EditorGUI.ObjectField(toRect, " to", toState.objectReferenceValue, typeof(Packages.Estenis.StateMachine_.State), false);
+          EditorGUI.ObjectField(
+            toRect, "->", toState.objectReferenceValue, typeof(Packages.Estenis.StateMachine_.State), false);
 
-      EditorGUIUtility.labelWidth = rect.width / 20f + 5;
       gameEvent.objectReferenceValue =
-          EditorGUI.ObjectField(whenRect, " when", gameEvent.objectReferenceValue, typeof(GameEventObject), false);
+          EditorGUI.ObjectField(
+            whenRect, " :", gameEvent.objectReferenceValue, typeof(GameEventObject), false);
 
       EditorGUIUtility.labelWidth = labelWidth;
     }
