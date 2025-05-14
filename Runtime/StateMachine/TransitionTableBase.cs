@@ -11,7 +11,6 @@ namespace Packages.Estenis.StateMachine_
     [SerializeField] private State _initialState;
     [SerializeField] protected State _anyState;
     [SerializeField] public List<StateToStateTransition> _stateToStateEntries = new();
-    [SerializeField] public List<StateToStateTransition> _stateToStateEntriesPrevious = new(); // Allows for 1 Undo
     [SerializeField] public StateToStateTransition[] _filteredStates;
 
     private void OnEnable()
