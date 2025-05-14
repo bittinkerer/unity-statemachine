@@ -1,16 +1,14 @@
 ﻿using Packages.Estenis.GameEvent_;
-using Packages.Estenis.ScriptableObjectsData_;
 using System;
 using System.Linq;
 using UnityEngine;
 
 namespace Packages.Estenis.StateMachine_ {
   public class StateManager : EventMonoBehaviour {
-    [SerializeField] private GameEventObject _stateChangeEvent;
-    [SerializeField] private GameObject _statesParentGO;
-    [SerializeField] private GameObject _sharedParentGO;
-    [SerializeField] private TransitionTable _transitionTable;
-    [SerializeField] private GameObject[] _alwaysOnStates;
+    [SerializeField] private GameEventObject  _stateChangeEvent;
+    [SerializeField] private GameObject       _statesParentGO;
+    [SerializeField] private GameObject       _sharedParentGO;
+    [SerializeField] private TransitionTable  _transitionTable;
 
     protected void Start( ) {
       // disable all state GOs
@@ -46,12 +44,12 @@ namespace Packages.Estenis.StateMachine_ {
     private void DisableAllStatesGO( ) {
       var statesParentTransforms = _sharedParentGO == null
                 ? _statesParentGO.transform.Cast<Transform>()
-                : _sharedParentGO.transform.Cast<Transform>().Concat(_statesParentGO.transform.Cast<Transform>());
+                : _sharedParentGO.transform.Cast<Transform>()
+                  .Concat(_statesParentGO.transform.Cast<Transform>())
+                  .Where(st => st.name != _sharedParentGO.name);
 
       foreach ( var item in statesParentTransforms ) {
-        if ( !_alwaysOnStates.Any( go => go.transform == (Transform) item ) ) {
-          ( item as Transform ).gameObject.SetActive( false );
-        }
+        ( item as Transform ).gameObject.SetActive( false );
       }
     }
   }
