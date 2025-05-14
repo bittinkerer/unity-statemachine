@@ -1,13 +1,38 @@
 ﻿using Packages.Estenis.GameEvent_;
 using Packages.Estenis.StateMachine_;
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using UnityEditor;
 using UnityEditorInternal;
 using UnityEngine;
 
 namespace Assets.StateMachine
 {
+
+  public static class ReorderableListExtensions2 {
+    public static List<T> toList<T>(this ReorderableList reorderableList) where T : new() {
+      List<T> result = new();
+      object temp = new T();
+      var props = typeof(T).GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+
+      for (int i = 0; i < reorderableList.count; ++i) {
+        SerializedProperty element = reorderableList.serializedProperty.GetArrayElementAtIndex(i);
+        foreach (var prop in props) {
+          var propValue = element.FindPropertyRelative(prop.Name);
+          if (propValue != null) {            
+            Type t = Nullable.GetUnderlyingType(prop.FieldType) ?? prop.FieldType;
+            if (t.IsValueType) continue;
+            object safeValue = Convert.ChangeType(propValue.objectReferenceValue, t);
+            prop.SetValue(temp, safeValue);
+          }
+        }
+        result.Add((T)temp);
+      }
+      return result;
+    }
+  }
 
   [CustomEditor(typeof(TransitionTableBase), true)]
   public class TransitionTableEditor : Editor
@@ -46,7 +71,7 @@ namespace Assets.StateMachine
         drawHeaderCallback = DrawTTableHeader,
       };
     }
-
+    
     private void DrawTTableHeader(Rect rect)
     {
       string from = "FROM";
@@ -70,8 +95,9 @@ namespace Assets.StateMachine
       serializedObject.ApplyModifiedProperties(); //save changes
       EditorGUI.EndDisabledGroup();
 
-      if (playing)
+      if (playing) {
         EditorGUILayout.HelpBox("Editing during PlayMode currently not supported.", MessageType.Info);
+      }
     }
 
     private void DrawInspector()
@@ -103,8 +129,17 @@ namespace Assets.StateMachine
         if(GUI.Button(new Rect(18,70,50,25), "Sort"))
         {
           _target._stateToStateEntries = 
-            _target._stateToStateEntries.OrderBy(s2sTransition => s2sTransition.FromState.name).ToList();
-          
+            _target._stateToStateEntries
+              .OrderBy(s2sTransition => (s2sTransition.FromState == null ? "zzz" : s2sTransition.FromState.name))
+              .ToList();          
+        }
+        if (!(EditorApplication.isPlayingOrWillChangePlaymode || Application.isPlaying)) {
+
+          if (GUI.Button(new Rect(EditorGUIUtility.currentViewWidth - 60, 70, 50, 25), "Save")) {
+            _target.Initialize(
+                (Packages.Estenis.StateMachine_.State)_initialState.objectReferenceValue
+              , _stateToStateList.toList<StateToStateTransition>());
+          }
         }
       }
       GUILayout.EndHorizontal();
@@ -179,7 +214,7 @@ namespace Assets.StateMachine
               true, true, true, true)
       {
         drawElementCallback = DrawStateToStateEntry,
-        drawHeaderCallback = (rect) => GUI.Label(rect, "State to state transitions:"),
+        drawHeaderCallback = DrawTTableHeader,
         onChangedCallback = (list) => { Debug.Log($"Changed: Filtered List has {list.count} items."); },  // TODO: Trigger event with full list with added/removed from filtered
                                                                                                           // Handlers should always be separate from origin of event
       };

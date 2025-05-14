@@ -14,7 +14,7 @@ namespace Packages.Estenis.StateMachine_
         public State InitialState { get; private set; }
         private Dictionary<State, HashSet<Transition>> _transitions = new();
 
-        protected override void Initialize(State initialState, List<StateToStateTransition> stateToState)
+        public override void Initialize(State initialState, List<StateToStateTransition> stateToState)
         {
             InitialState = initialState;
 

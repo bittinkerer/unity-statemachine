@@ -25,7 +25,7 @@ namespace Packages.Estenis.StateMachine_
 #endif
 
     }
-    protected abstract void Initialize(State initialState, List<StateToStateTransition> sts);
+    public abstract void Initialize(State initialState, List<StateToStateTransition> sts);
   }
 
 
