@@ -13,7 +13,7 @@ namespace Packages.Estenis.StateMachine_ {
 
     private void Awake( ) {
       _currentState = _transitionTable.InitialState;
-      _transitionTable.Register( EventId, _transitionTable_OnTransition );
+      _transitionTable.OnStateChanged( EventId, _transitionTable.InitialState, _transitionTable_OnTransition );
     }
 
     private void _transitionTable_OnTransition( object sender, object data ) {

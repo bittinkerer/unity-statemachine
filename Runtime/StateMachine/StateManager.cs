@@ -8,7 +8,7 @@ namespace Packages.Estenis.StateMachine_ {
     [SerializeField] private GameEventObject  _stateChangeEvent;
     [SerializeField] private GameObject       _statesParentGO;
     [SerializeField] private GameObject       _sharedParentGO;
-    [SerializeField] private TransitionTable  _transitionTable;
+    [SerializeField] public TransitionTable   _transitionTable;
 
     protected void Start( ) {
       // disable all state GOs

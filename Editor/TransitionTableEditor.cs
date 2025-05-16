@@ -8,155 +8,158 @@ using UnityEditor;
 using UnityEditorInternal;
 using UnityEngine;
 
-namespace Assets.StateMachine
-{
+namespace Assets.Esteny.StateMachine_ {
 
-  public static class ReorderableListExtensions2 {
-    public static List<T> toList<T>(this ReorderableList reorderableList) where T : new() {
+  public static class ReorderableListExtensions {
+    public static List<T> toList<T>( this ReorderableList reorderableList ) where T : new() {
       List<T> result = new();
       object temp = new T();
       var props = typeof(T).GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
 
-      for (int i = 0; i < reorderableList.count; ++i) {
+      for ( int i = 0; i < reorderableList.count; ++i ) {
         SerializedProperty element = reorderableList.serializedProperty.GetArrayElementAtIndex(i);
-        foreach (var prop in props) {
+        foreach ( var prop in props ) {
           var propValue = element.FindPropertyRelative(prop.Name);
-          if (propValue != null) {            
+          if ( propValue != null ) {
             Type t = Nullable.GetUnderlyingType(prop.FieldType) ?? prop.FieldType;
-            if (t.IsValueType) continue;
+            if ( t.IsValueType ) continue;
             object safeValue = Convert.ChangeType(propValue.objectReferenceValue, t);
-            prop.SetValue(temp, safeValue);
+            prop.SetValue( temp, safeValue );
           }
         }
-        result.Add((T)temp);
+        result.Add( (T) temp );
       }
       return result;
     }
   }
 
-  [CustomEditor(typeof(TransitionTableBase), true)]
-  public class TransitionTableEditor : Editor
-  {
-    private TransitionTableBase _target;
-    private SerializedProperty _initialState;
-    private SerializedProperty _anyState;
-    private ReorderableList _stateToStateList;
+  [CustomEditor( typeof( TransitionTableBase ), true )]
+  public class TransitionTableEditor : Editor {
+    private TransitionTableBase   _target;
+    private SerializedProperty    _initialState;
+    private ReorderableList       _stateToStateList;
+    private ReorderableList       _baseTablesList;
+    private string                _filter;
+    private string                _previousFilter;
+    private int                   _popupIndex = 0;
+    private int                   _previousTransitionType = 0;
 
-    private string _filter;
-    private string _previousFilter;
-    private int _popupIndex = 0;
-    private int _previousTransitionType = 0;
-
-    private enum TransitionType
-    {
+    private enum TransitionType {
       FROM = 0,
       TO,
       EVENT,
       ANY
     }
 
-    protected void OnEnable()
-    {
-      _target = (TransitionTableBase)serializedObject.targetObject;
+    protected void OnEnable( ) {
+      _target = (TransitionTableBase) serializedObject.targetObject;
 
-      _initialState = serializedObject.FindProperty("_initialState");
-      _anyState = serializedObject.FindProperty("_anyState");
+      _initialState = serializedObject.FindProperty( "_initialState" );
+
+      _baseTablesList = new ReorderableList(
+        serializedObject,
+        serializedObject.FindProperty( "_baseTables" ),
+        true, true, true, true ) {
+        drawElementCallback = DrawBaseTTableEntry,
+        drawHeaderCallback = DrawBaseTTablesHeader,
+      };
 
       _stateToStateList = new ReorderableList(
           serializedObject,
-          serializedObject.FindProperty("_stateToStateEntries"),
-          true, true, true, true)
-      {
+          serializedObject.FindProperty( "_stateToStateEntries" ),
+          true, true, true, true ) {
         drawElementCallback = DrawStateToStateEntry,
         drawHeaderCallback = DrawTTableHeader,
       };
     }
-    
-    private void DrawTTableHeader(Rect rect)
-    {
+
+    private void DrawTTableHeader( Rect rect ) {
       string from = "FROM";
-      string to = "| TO";
+      string to   = "| TO";
       string when = "| WHEN";
-      
-      GUI.Label(new Rect(rect.x, rect.y, rect.width/3, rect.height), from);
-      GUI.Label(new Rect(rect.x + rect.width / 3, rect.y, rect.width / 3, rect.height), $"{to, 10}");
-      GUI.Label(new Rect(rect.x + 2 * (rect.width / 3), rect.y, rect.width / 3, rect.height), $"{when,10}");
-      GUI.Label(new Rect(rect.x + rect.width - 30, rect.y, 30, rect.height), $"{_stateToStateList.count, 2}");
+
+      GUI.Label( new Rect( rect.x, rect.y, rect.width / 3, rect.height ), from );
+      GUI.Label( new Rect( rect.x + rect.width / 3, rect.y, rect.width / 3, rect.height ), $"{to,10}" );
+      GUI.Label( new Rect( rect.x + 2 * ( rect.width / 3 ), rect.y, rect.width / 3, rect.height ), $"{when,10}" );
+      GUI.Label( new Rect( rect.x + rect.width - 30, rect.y, 30, rect.height ), $"{_stateToStateList.count,2}" );
     }
 
-    public override void OnInspectorGUI()
-    {
+    private void DrawBaseTTablesHeader( Rect rect ) {
+      GUI.Label( new Rect( rect.x, rect.y, rect.width, rect.height ), "Base Transition Tables" );
+    }
+
+    public override void OnInspectorGUI( ) {
       bool playing = EditorApplication.isPlayingOrWillChangePlaymode || Application.isPlaying;
 
-      EditorGUI.BeginDisabledGroup(playing);
+      EditorGUI.BeginDisabledGroup( playing );
       serializedObject.Update(); //get the latest target version
       DrawInspector();
       SaveFilteredChanges();
       serializedObject.ApplyModifiedProperties(); //save changes
       EditorGUI.EndDisabledGroup();
 
-      if (playing) {
-        EditorGUILayout.HelpBox("Editing during PlayMode currently not supported.", MessageType.Info);
+      if ( playing ) {
+        EditorGUILayout.HelpBox( "Editing during PlayMode currently not supported.", MessageType.Info );
       }
     }
 
-    private void DrawInspector()
-    {
+    private void DrawInspector( ) {
       _initialState.objectReferenceValue =
           EditorGUILayout.ObjectField(
-              "Initial State: ", _initialState.objectReferenceValue, typeof(Packages.Estenis.StateMachine_.State), false);
+              "Initial State: ", _initialState.objectReferenceValue, typeof( Packages.Estenis.StateMachine_.State ), false );
+      EditorGUILayout.Space( 10 );
 
-      _anyState.objectReferenceValue =
-          EditorGUILayout.ObjectField(
-              "Any State: ", _anyState.objectReferenceValue, typeof(Packages.Estenis.StateMachine_.State), false);
+      // Draw base Transition Tables
+      GUILayout.BeginHorizontal();
+      {
+        _baseTablesList.DoLayoutList();
+      }
+      GUILayout.EndHorizontal();
+      EditorGUILayout.Space( 7 );
 
       // Draw Filtering Options
       GUILayout.BeginHorizontal();
       {
         var sixthWidth = EditorGUIUtility.currentViewWidth / 6;
-        //EditorGUILayout.LabelField("Filter", GUILayout.Width(sixthWidth));
         _popupIndex = EditorGUILayout.Popup(
-          _popupIndex, 
-          Enum.GetNames(typeof(TransitionType)).Select(s => new GUIContent(s)).ToArray(), 
-          GUILayout.Width(sixthWidth * 1 - 3));
-        //GUILayout.Space(sixthWidth*1.375f);
-        _filter = EditorGUILayout.TextField(_filter, GUILayout.Width(sixthWidth * 5 - 10));
+          _popupIndex,
+          Enum.GetNames( typeof( TransitionType ) ).Select( s => new GUIContent( s ) ).ToArray(),
+          GUILayout.Width( sixthWidth * 1 - 3 ) );
+        _filter = EditorGUILayout.TextField( _filter, GUILayout.Width( sixthWidth * 5 - 10 ) );
       }
       GUILayout.EndHorizontal();
 
       GUILayout.BeginHorizontal();
       {
-        if(GUI.Button(new Rect(18,70,50,25), "Sort"))
-        {
-          _target._stateToStateEntries = 
+        // Sort click
+        if ( GUILayout.Button("SORT") ) {
+          _target._stateToStateEntries =
             _target._stateToStateEntries
-              .OrderBy(s2sTransition => (s2sTransition.FromState == null ? "zzz" : s2sTransition.FromState.name))
-              .ToList();          
+              .OrderBy( s2sTransition => ( s2sTransition.FromState == null ? "zzz" : s2sTransition.FromState.name ) )
+              .ToList();
         }
-        if (!(EditorApplication.isPlayingOrWillChangePlaymode || Application.isPlaying)) {
+        // Save click
+        if ( !( EditorApplication.isPlayingOrWillChangePlaymode || Application.isPlaying ) ) {
 
-          if (GUI.Button(new Rect(EditorGUIUtility.currentViewWidth - 60, 70, 50, 25), "Save")) {
+          if (GUILayout.Button("SAVE") ) {
             _target.Initialize(
-                (Packages.Estenis.StateMachine_.State)_initialState.objectReferenceValue
-              , _stateToStateList.toList<StateToStateTransition>());
+                (Packages.Estenis.StateMachine_.State) _initialState.objectReferenceValue
+              , _stateToStateList.toList<StateToStateTransition>() );
           }
         }
       }
       GUILayout.EndHorizontal();
 
-      EditorGUILayout.Space(40);
+      EditorGUILayout.Space( 10 );
       // Draw Transition Table
-      if (!string.IsNullOrWhiteSpace(_filter) && (_popupIndex != _previousTransitionType || _filter != _previousFilter))
-      {
+      if ( !string.IsNullOrWhiteSpace( _filter ) && ( _popupIndex != _previousTransitionType || _filter != _previousFilter ) ) {
         UpdateFiltered();
       }
-      else if (_filter != _previousFilter && string.IsNullOrWhiteSpace(_filter))
-      {
+      else if ( _filter != _previousFilter && string.IsNullOrWhiteSpace( _filter ) ) {
         _stateToStateList = new ReorderableList(
              serializedObject,
-             serializedObject.FindProperty("_stateToStateEntries"),
-             true, true, true, true)
-        {
+             serializedObject.FindProperty( "_stateToStateEntries" ),
+             true, true, true, true ) {
           drawElementCallback = DrawStateToStateEntry,
           drawHeaderCallback = DrawTTableHeader
         };
@@ -169,67 +172,60 @@ namespace Assets.StateMachine
       _stateToStateList.DoLayoutList();
     }
 
-    private void UpdateFiltered()
-    {
+    private void UpdateFiltered( ) {
       Func<(StateToStateTransition, int), bool> filter = ((StateToStateTransition s, int i) input) => true;
-      switch (_popupIndex)
-      {
-        case (int)TransitionType.FROM:
-          filter = ((StateToStateTransition s, int i) input) => 
-            input.s.FromState != null && input.s.FromState.name.ToLowerInvariant().StartsWith(_filter.ToLowerInvariant());
+      switch ( _popupIndex ) {
+        case (int) TransitionType.FROM:
+          filter = ( (StateToStateTransition s, int i) input ) =>
+            input.s.FromState != null && input.s.FromState.name.ToLowerInvariant().StartsWith( _filter.ToLowerInvariant() );
           break;
-        case (int)TransitionType.EVENT:
-          filter = ((StateToStateTransition s, int i) input) =>
-            input.s.GameEvent != null && input.s.GameEvent.name.ToLowerInvariant().StartsWith(_filter.ToLowerInvariant());
+        case (int) TransitionType.EVENT:
+          filter = ( (StateToStateTransition s, int i) input ) =>
+            input.s.GameEvent != null && input.s.GameEvent.name.ToLowerInvariant().StartsWith( _filter.ToLowerInvariant() );
           break;
-        case (int)TransitionType.TO:
-          filter = ((StateToStateTransition s, int i) input) => 
-            input.s.ToState != null && input.s.ToState.name.ToLowerInvariant().StartsWith(_filter.ToLowerInvariant());
+        case (int) TransitionType.TO:
+          filter = ( (StateToStateTransition s, int i) input ) =>
+            input.s.ToState != null && input.s.ToState.name.ToLowerInvariant().StartsWith( _filter.ToLowerInvariant() );
           break;
-        case (int)TransitionType.ANY:
-          filter = ((StateToStateTransition s, int i) input) =>
-                  input.s.FromState.name.ToLowerInvariant().StartsWith(_filter.ToLowerInvariant())
-              || input.s.GameEvent.name.ToLowerInvariant().StartsWith(_filter.ToLowerInvariant())
-              || input.s.ToState.name.ToLowerInvariant().StartsWith(_filter.ToLowerInvariant());
+        case (int) TransitionType.ANY:
+          filter = ( (StateToStateTransition s, int i) input ) =>
+                  input.s.FromState.name.ToLowerInvariant().StartsWith( _filter.ToLowerInvariant() )
+              || input.s.GameEvent.name.ToLowerInvariant().StartsWith( _filter.ToLowerInvariant() )
+              || input.s.ToState.name.ToLowerInvariant().StartsWith( _filter.ToLowerInvariant() );
           break;
         default:
           break;
       }
       _target._filteredStates = _target._stateToStateEntries
-          .Select((transition, index) => (transition, index))
-          .Where(filter)
-          .Select(t =>
-              new StateToStateTransition
-              {
+          .Select( ( transition, index ) => (transition, index) )
+          .Where( filter )
+          .Select( t =>
+              new StateToStateTransition {
                 FromState = t.Item1.FromState,
                 ToState = t.Item1.ToState,
                 GameEvent = t.Item1.GameEvent,
                 Index = t.Item2
-              })
+              } )
           .ToArray();
 
       _stateToStateList = new ReorderableList(
               serializedObject,
-              serializedObject.FindProperty("_filteredStates"),
-              true, true, true, true)
-      {
+              serializedObject.FindProperty( "_filteredStates" ),
+              true, true, true, true ) {
         drawElementCallback = DrawStateToStateEntry,
         drawHeaderCallback = DrawTTableHeader,
-        onChangedCallback = (list) => { Debug.Log($"Changed: Filtered List has {list.count} items."); },  // TODO: Trigger event with full list with added/removed from filtered
-                                                                                                          // Handlers should always be separate from origin of event
+        onChangedCallback = ( list ) => { Debug.Log( $"Changed: Filtered List has {list.count} items." ); },  
+        // TODO: Trigger event with full list with added/removed from filtered
+        // Handlers should always be separate from origin of event
       };
     }
 
-    private void SaveFilteredChanges()
-    {
-      foreach (var item in _target._filteredStates ?? new StateToStateTransition[0])
-      {
-        if (item.GameEvent != _target._stateToStateEntries[item.Index].GameEvent
+    private void SaveFilteredChanges( ) {
+      foreach ( var item in _target._filteredStates ?? new StateToStateTransition[0] ) {
+        if ( item.GameEvent != _target._stateToStateEntries[item.Index].GameEvent
             || item.ToState != _target._stateToStateEntries[item.Index].ToState
-            || item.FromState != _target._stateToStateEntries[item.Index].FromState)
-        {
-          _target._stateToStateEntries[item.Index] = new StateToStateTransition
-          {
+            || item.FromState != _target._stateToStateEntries[item.Index].FromState ) {
+          _target._stateToStateEntries[item.Index] = new StateToStateTransition {
             FromState = item.FromState,
             ToState = item.ToState,
             GameEvent = item.GameEvent,
@@ -238,8 +234,7 @@ namespace Assets.StateMachine
       }
     }
 
-    private void DrawStateToStateEntry(Rect rect, int index, bool isActive, bool isFocused)
-    {
+    private void DrawStateToStateEntry( Rect rect, int index, bool isActive, bool isFocused ) {
       SerializedProperty element = _stateToStateList.serializedProperty.GetArrayElementAtIndex(index);
 
       SerializedProperty fromState  = element.FindPropertyRelative("FromState");
@@ -258,17 +253,25 @@ namespace Assets.StateMachine
 
       fromState.objectReferenceValue =
           EditorGUI.ObjectField(
-            fromRect, "", fromState.objectReferenceValue, typeof(Packages.Estenis.StateMachine_.State), false);
+            fromRect, "", fromState.objectReferenceValue, typeof( Packages.Estenis.StateMachine_.State ), false );
 
       toState.objectReferenceValue =
           EditorGUI.ObjectField(
-            toRect, "->", toState.objectReferenceValue, typeof(Packages.Estenis.StateMachine_.State), false);
+            toRect, "->", toState.objectReferenceValue, typeof( Packages.Estenis.StateMachine_.State ), false );
 
       gameEvent.objectReferenceValue =
           EditorGUI.ObjectField(
-            whenRect, " :", gameEvent.objectReferenceValue, typeof(GameEventObject), false);
+            whenRect, " :", gameEvent.objectReferenceValue, typeof( GameEventObject ), false );
 
       EditorGUIUtility.labelWidth = labelWidth;
+    }
+
+    private void DrawBaseTTableEntry( Rect rect, int index, bool isActive, bool isFocused ) {
+      SerializedProperty element = _baseTablesList.serializedProperty.GetArrayElementAtIndex(index);
+      Rect ttableRect = new(rect.x, rect.y, rect.width, EditorGUIUtility.singleLineHeight);
+      element.objectReferenceValue =
+          EditorGUI.ObjectField(
+            ttableRect, "", element.objectReferenceValue, typeof( Packages.Estenis.StateMachine_.TransitionTable ), false );
     }
   }
 }

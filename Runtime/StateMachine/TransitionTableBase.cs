@@ -8,15 +8,20 @@ namespace Packages.Estenis.StateMachine_
 
   public abstract class TransitionTableBase : ScriptableObject
   {
-    [SerializeField] private State _initialState;
-    [SerializeField] protected State _anyState;
-    [SerializeField] public List<StateToStateTransition> _stateToStateEntries = new();
-    [SerializeField] public StateToStateTransition[] _filteredStates;
+    public const string ANY_STATE_NAME = "_AnyState";
 
-    private void OnEnable()
+    [SerializeField] private State                        _initialState;
+    [SerializeField] protected State                      _anyState;
+    [SerializeField] public List<StateToStateTransition>  _stateToStateEntries = new();
+    [SerializeField] public StateToStateTransition[]      _filteredStates;
+    [SerializeField] public List<TransitionTable>         _baseTables  = new();
+
+    protected void OnEnable()
     {
 #if UNITY_EDITOR
-      if (EditorApplication.isPlayingOrWillChangePlaymode || Application.isPlaying || EditorSettings.enterPlayModeOptions == EnterPlayModeOptions.DisableDomainReload)
+      if ( EditorApplication.isPlayingOrWillChangePlaymode 
+        || Application.isPlaying 
+        || EditorSettings.enterPlayModeOptions == EnterPlayModeOptions.DisableDomainReload)
       {
 #endif
         Initialize(_initialState, _stateToStateEntries);
