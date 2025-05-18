@@ -13,6 +13,7 @@ namespace Packages.Estenis.StateMachine_
     [SerializeField] private State                        _initialState;
     [SerializeField] private string                       _initState;
     [SerializeField] public List<StateToStateTransition>  _stateToStateEntries = new();
+    [SerializeField] public List<StateToStateTransition2>  _stateToStateEntries2 = new();
     [SerializeField] public StateToStateTransition[]      _filteredStates;
     [SerializeField] public List<TransitionTable>         _baseTables  = new();
 
