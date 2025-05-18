@@ -22,13 +22,13 @@ namespace Packages.Estenis.StateMachine_ {
     }
 
     private void OnStateChanged( object sender, object next ) {
-      if ( next is not State nextState ) {
+      if ( next is not string nextState ) {
         return;
       }
       // disable all 
       DisableAllStatesGO();
       // enable selected state GO
-      EnableStateGO( nextState.name );
+      EnableStateGO( nextState );
     }
 
     private void EnableStateGO( string state ) {

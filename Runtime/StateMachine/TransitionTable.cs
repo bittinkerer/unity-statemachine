@@ -59,7 +59,7 @@ namespace Packages.Estenis.StateMachine_ {
       }
     }
 
-    public void OnStateChanged( int instanceId, State newState, Action<object, object> action ) {
+    public void OnStateChanged( int instanceId, string newState, Action<object, object> action ) {
       // Deactivate all except AnyState
       foreach ( var transition in _transitions
               .Where( t => t.Key.name != ANY_STATE_NAME )
@@ -74,7 +74,7 @@ namespace Packages.Estenis.StateMachine_ {
 
       // Activate current
       _transitions
-          .Where( kvp => kvp.Key.name == newState.name || kvp.Key.name == ANY_STATE_NAME )
+          .Where( kvp => kvp.Key.name == newState || kvp.Key.name == ANY_STATE_NAME )
           .SelectMany( kvp => kvp.Value )
           .ForEach( t => t.TransitionEvent.Register(
               instanceId,

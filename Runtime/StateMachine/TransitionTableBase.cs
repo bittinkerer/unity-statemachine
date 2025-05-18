@@ -11,7 +11,7 @@ namespace Packages.Estenis.StateMachine_
     public const string ANY_STATE_NAME = "_AnyState";
 
     [SerializeField] private State                        _initialState;
-    [SerializeField] protected State                      _anyState;
+    [SerializeField] private string                       _initState;
     [SerializeField] public List<StateToStateTransition>  _stateToStateEntries = new();
     [SerializeField] public StateToStateTransition[]      _filteredStates;
     [SerializeField] public List<TransitionTable>         _baseTables  = new();

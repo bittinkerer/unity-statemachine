@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Packages.Estenis.StateMachine_ {
   public class StateMachine : EventMonoBehaviour {
-    public State                              _currentState;
+    public string                             _currentState;
     public TransitionTable                    _transitionTable;
     [SerializeField] private GameEventObject  _onStateChangedEvent;
     [SerializeField] private GameEventObject  _afterStateChangedEvent;
@@ -12,8 +12,8 @@ namespace Packages.Estenis.StateMachine_ {
     private bool                              _transitionDonePerFrame;  // only allow one transition per frame
 
     private void Awake( ) {
-      _currentState = _transitionTable.InitialState;
-      _transitionTable.OnStateChanged( EventId, _transitionTable.InitialState, _transitionTable_OnTransition );
+      _currentState = _transitionTable.InitialState.name;
+      _transitionTable.OnStateChanged( EventId, _transitionTable.InitialState.name, _transitionTable_OnTransition );
     }
 
     private void _transitionTable_OnTransition( object sender, object data ) {
@@ -24,15 +24,15 @@ namespace Packages.Estenis.StateMachine_ {
         return;
       }
 
-      if ( _currentState.name == transition.NextState.name ) {
+      if ( _currentState == transition.NextState ) {
         Debug.LogWarning( 
-          $"Trying to transition through same states is NOT supported. Transition from {_currentState.name}->{transition.NextState.name} cancelled." );
+          $"Trying to transition through same states is NOT supported. Transition from {_currentState}->{transition.NextState} cancelled." );
         return;
       }
 
       if ( _logStateTransition ) {
         Debug.Log( 
-          $"Transition [{Time.time}]: {transition.TransitionEvent.name} : ({transition.CurrentState.name} -> {transition.NextState.name})" );
+          $"Transition [{Time.time}]: {transition.TransitionEvent.name} : ({transition.CurrentState} -> {transition.NextState})" );
       }
 
       _currentState = transition.NextState;
@@ -49,9 +49,9 @@ namespace Packages.Estenis.StateMachine_ {
     }
 
     private void OnDisable( ) {
-      _currentState = _transitionTable.InitialState;
+      _currentState = _transitionTable.InitialState.name;
       _onStateChangedEvent.Raise( EventId, this.gameObject, _currentState );
-      _transitionTable.OnStateChanged( EventId, _transitionTable.InitialState, _transitionTable_OnTransition );
+      _transitionTable.OnStateChanged( EventId, _transitionTable.InitialState.name, _transitionTable_OnTransition );
     }
 
     private void OnDestroy( ) {
