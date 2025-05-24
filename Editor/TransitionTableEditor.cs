@@ -39,18 +39,24 @@ namespace Assets.Esteny.StateMachine_ {
   public class TransitionTableEditor : Editor {
     private TransitionTableBase   _target;
     private SerializedProperty    _initialState;
+    private SerializedProperty    _initState;
     private ReorderableList       _stateToStateList;
     private ReorderableList       _stateToStateList2;
     private ReorderableList       _baseTablesList;
+    private ReorderableList       _referencesList;
     private string                _filter;
     private string                _previousFilter;
     private int                   _popupIndex = 0;
     private int                   _previousTransitionType = 0;
 
     const string                  PREFABS_PATH        = @"Assets/Prefabs/";
-    const string                  PREFAB_STATES_PATH  = @"STATES/_States";
+    const string                  PREFAB_STATES_PATH  = @"STATES";
     private List<string>          _states             = new();
     private string                _prefabName; // for logging purposes 
+
+    // References
+    bool _showReferences = false;
+    List<GameObject> _references = new ();
 
     private enum TransitionType {
       FROM = 0,
@@ -64,25 +70,34 @@ namespace Assets.Esteny.StateMachine_ {
 
       // Get corresponding prefab
       if ( _target.name.Contains( "_TTable" ) ) {
-        string prefabGUID = 
-          AssetDatabase.FindAssets( _target.name.Remove( _target.name.IndexOf( "_TTable" ) ), new string[] { PREFABS_PATH } ).First();
-        string path = AssetDatabase.GUIDToAssetPath(prefabGUID);
-        GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
-        _prefabName = prefab.name;
-        var statesTransform =
-          prefab.transform.Find(PREFAB_STATES_PATH);
-
-        // build states-to-index map based on prefab states order
-        _states.Clear();
-        _states.Add( "_AnyState" );
-        foreach(Transform tr in statesTransform) {
-          if ( tr.name != "_SharedStates" ) {
-            _states.Add( tr.gameObject.name );
+        string prefabGUID =
+          AssetDatabase.FindAssets(
+            _target.name.Remove( _target.name.IndexOf( "_TTable" ) ), new string[] { PREFABS_PATH } )
+          .FirstOrDefault();
+        if ( prefabGUID != null ) { // @TODO: Cleanup
+          string path = AssetDatabase.GUIDToAssetPath(prefabGUID);
+          GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+          _prefabName = prefab.name;
+          var statesTransform = prefab.transform.Find(PREFAB_STATES_PATH);
+          if ( !statesTransform ) {
+            Debug.LogError( $"TTable {target.name} did not find Prefab with '{PREFAB_STATES_PATH}' path, {_prefabName}" );
+            //return;
+          }
+          // build states list for (from,to) states-dropdown
+          if ( statesTransform ) {
+            _states.Clear();
+            _states.Add( "_AnyState" );
+            foreach ( Transform tr in statesTransform ) {
+              if ( tr.name != "_SharedStates" ) {
+                _states.Add( tr.gameObject.name );
+              }
+            }
           }
         }
       }
 
       _initialState = serializedObject.FindProperty( "_initialState" );
+      _initState = serializedObject.FindProperty( "_initState" );
 
       _baseTablesList = new ReorderableList(
         serializedObject,
@@ -92,6 +107,16 @@ namespace Assets.Esteny.StateMachine_ {
         drawHeaderCallback = DrawBaseTTablesHeader,
       };
 
+      // References
+      _references = FindPrefabReferences( target.name ).ToList();
+      _referencesList = new ReorderableList(
+        _references,
+        typeof( GameObject ) ) {
+        drawElementCallback = DrawReferenceEntry,
+        //drawHeaderCallback => EditorGUILayout.LabelField("Gooer")
+      };
+
+      // Transitions
       _stateToStateList = new ReorderableList(
           serializedObject,
           serializedObject.FindProperty( "_stateToStateEntries" ),
@@ -111,19 +136,21 @@ namespace Assets.Esteny.StateMachine_ {
       //SyncStateTransitions();
     }
 
-    private bool _seedDone = false;
-    private void SyncStateTransitions() {
-      //if(_seedDone) return;
-
+    private bool _seeded = false;
+    // @TODO: Remove this method once we've transitioned fully to string-States
+    private void SyncStateTransitions( ) {
+      if ( _seeded ) {
+        return;
+      }
+      _seeded = true;
       _target._stateToStateEntries2.Clear();
       foreach ( var st1 in _stateToStateList.toList<StateToStateTransition>() ) {
         _target._stateToStateEntries2.Add( new StateToStateTransition2 {
-          FromState   = st1.FromState.name,
-          ToState     = st1.ToState.name,
-          GameEvent   = st1.GameEvent,
-        });
+          FromState = st1.FromState.name,
+          ToState = st1.ToState.name,
+          GameEvent = st1.GameEvent,
+        } );
       }
-      //_seedDone = true;
     }
 
     private void DrawTTableHeader( Rect rect ) {
@@ -157,17 +184,36 @@ namespace Assets.Esteny.StateMachine_ {
     }
 
     private void DrawInspector( ) {
+      // Draw Initial State
       _initialState.objectReferenceValue =
-          EditorGUILayout.ObjectField(
-              "Initial State: ", _initialState.objectReferenceValue, typeof( Packages.Estenis.StateMachine_.State ), false );
+            EditorGUILayout.ObjectField(
+                "Initial State: ", _initialState.objectReferenceValue, typeof( Packages.Estenis.StateMachine_.State ), false );
+
+      if ( _states.Count > 0 ) {
+        int initIndex =
+        EditorGUILayout.Popup(
+          "Init State: ",
+          Math.Max(0, _states.FindIndex( e => string.IsNullOrEmpty(_initState.stringValue) || _initState.stringValue == e )), _states.ToArray() );
+
+        _initState.stringValue = _states[initIndex];
+      }
+
       EditorGUILayout.Space( 10 );
 
+      // Draw Base Tables
       GUILayout.BeginHorizontal();
       {
         _baseTablesList.DoLayoutList();
       }
       GUILayout.EndHorizontal();
       EditorGUILayout.Space( 7 );
+
+      // Draw References
+      _showReferences = EditorGUILayout.Foldout( _showReferences, "Prefab References" );
+      if ( _showReferences ) {
+        //EditorGUILayout.LabelField( "FOO" );
+        _referencesList.DoLayoutList();
+      }
 
       // Draw Filtering Options
       GUILayout.BeginHorizontal();
@@ -184,7 +230,7 @@ namespace Assets.Esteny.StateMachine_ {
       GUILayout.BeginHorizontal();
       {
         // Sort click
-        if ( GUILayout.Button("SORT") ) {
+        if ( GUILayout.Button( "SORT" ) ) {
           _target._stateToStateEntries =
             _target._stateToStateEntries
               .OrderBy( s2sTransition => ( s2sTransition.FromState == null ? "zzz" : s2sTransition.FromState.name ) )
@@ -193,10 +239,10 @@ namespace Assets.Esteny.StateMachine_ {
         // Save click
         if ( !( EditorApplication.isPlayingOrWillChangePlaymode || Application.isPlaying ) ) {
 
-          if (GUILayout.Button("SAVE") ) {
+          if ( GUILayout.Button( "SAVE" ) ) {
             _target.Initialize(
                 (Packages.Estenis.StateMachine_.State) _initialState.objectReferenceValue
-              , _stateToStateList.toList<StateToStateTransition>() );
+              , _stateToStateList.toList<StateToStateTransition2>() );
           }
         }
       }
@@ -229,6 +275,7 @@ namespace Assets.Esteny.StateMachine_ {
 
       // Draw Transition Table 2
       _stateToStateList2.DoLayoutList();
+
     }
 
     private void UpdateFiltered( ) {
@@ -273,7 +320,7 @@ namespace Assets.Esteny.StateMachine_ {
               true, true, true, true ) {
         drawElementCallback = DrawStateToStateEntry,
         drawHeaderCallback = DrawTTableHeader,
-        onChangedCallback = ( list ) => { Debug.Log( $"Changed: Filtered List has {list.count} items." ); },  
+        onChangedCallback = ( list ) => { Debug.Log( $"Changed: Filtered List has {list.count} items." ); },
         // TODO: Trigger event with full list with added/removed from filtered
         // Handlers should always be separate from origin of event
       };
@@ -329,7 +376,6 @@ namespace Assets.Esteny.StateMachine_ {
       // get data
       SerializedProperty element = _stateToStateList2.serializedProperty.GetArrayElementAtIndex(index);
 
-      int listIndex        = element.FindPropertyRelative("Index").intValue;
       SerializedProperty fromStateValue   = element.FindPropertyRelative("FromState");
       SerializedProperty toStateValue     = element.FindPropertyRelative("ToState");
       SerializedProperty gameEvent        = element.FindPropertyRelative("GameEvent");
@@ -348,23 +394,21 @@ namespace Assets.Esteny.StateMachine_ {
       int currentIndex = 0, indexSelected = 0;
 
       // validate and show UI
-      currentIndex = _states.FindIndex( e => fromStateValue.stringValue == e );
+      currentIndex = _states.FindIndex( e => fromStateValue.stringValue == string.Empty || fromStateValue.stringValue == e );
       if ( currentIndex < 0 ) {
-        Debug.LogError( $"TTable for {_prefabName} coudln't find state: {fromStateValue.stringValue}" );
+        Debug.LogWarning( $"TTable for {_prefabName} coudln't find state: {fromStateValue.stringValue}" );
+        currentIndex = 0;
       }
-      else {
-        indexSelected = EditorGUI.Popup( fromRect, _states.FindIndex( e => fromStateValue.stringValue == e ), _states.ToArray() );
-        fromStateValue.stringValue = _states[indexSelected];
-      }
+      indexSelected = EditorGUI.Popup( fromRect, currentIndex, _states.ToArray() );
+      fromStateValue.stringValue = _states[indexSelected];
 
-      currentIndex = _states.FindIndex( e => toStateValue.stringValue == e );
+      currentIndex = _states.FindIndex( e => toStateValue.stringValue == string.Empty || toStateValue.stringValue == e );
       if ( currentIndex < 0 ) {
         Debug.LogError( $"TTable for {_prefabName} coudln't find state: {toStateValue.stringValue}" );
+        currentIndex = 0;
       }
-      else {
-        indexSelected = EditorGUI.Popup( toRect, "->", _states.FindIndex( e => toStateValue.stringValue == e ), _states.ToArray() );
-        toStateValue.stringValue = _states[indexSelected];
-      }
+      indexSelected = EditorGUI.Popup( toRect, "->", currentIndex, _states.ToArray() );
+      toStateValue.stringValue = _states[indexSelected];
 
       gameEvent.objectReferenceValue =
           EditorGUI.ObjectField(
@@ -382,6 +426,14 @@ namespace Assets.Esteny.StateMachine_ {
             ttableRect, "", element.objectReferenceValue, typeof( Packages.Estenis.StateMachine_.TransitionTable ), false );
     }
 
+    private void DrawReferenceEntry( Rect rect, int index, bool isActive, bool isFocused ) {
+      //SerializedProperty element = _referencesList.serializedProperty.GetArrayElementAtIndex(index);
+      Rect ttableRect = new(rect.x, rect.y, rect.width, EditorGUIUtility.singleLineHeight);
+      _references[index] =
+          (GameObject) EditorGUI.ObjectField(
+            ttableRect, "", _references[index], typeof( GameObject ), false );
+    }
+
     private void DrawTTableHeader2( Rect rect ) {
       string from = "FROM";
       string to   = "| TO";
@@ -391,6 +443,21 @@ namespace Assets.Esteny.StateMachine_ {
       GUI.Label( new Rect( rect.x + rect.width / 3, rect.y, rect.width / 3, rect.height ), $"{to,10}" );
       GUI.Label( new Rect( rect.x + 2 * ( rect.width / 3 ), rect.y, rect.width / 3, rect.height ), $"{when,10}" );
       GUI.Label( new Rect( rect.x + rect.width - 30, rect.y, 30, rect.height ), $"{_stateToStateList2.count,2}" );
+    }
+
+    private IEnumerable<GameObject> FindPrefabReferences( string ttableName ) {
+      var references = AssetDatabase.FindAssets( "t:Prefab", new string[] { PREFABS_PATH } )
+        .Select( guid => {
+          string path = AssetDatabase.GUIDToAssetPath( guid );
+          var go = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+          return go;
+        } )
+        .Where( go => {
+          var sm = go.GetComponent<Packages.Estenis.StateMachine_.StateMachine>();
+          return sm && sm._transitionTable != null && sm._transitionTable.name == ttableName;
+        } )
+        .Select( go => go );
+      return references;
     }
   }
 }

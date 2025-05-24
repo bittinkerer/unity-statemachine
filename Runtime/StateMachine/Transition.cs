@@ -12,14 +12,14 @@ namespace Packages.Estenis.StateMachine_ {
     public GameEventObject TransitionEvent { get; }
     public Guid Id { get; }
 
-    public Transition( State currentState, State nextState, GameEventObject gameEvent ) {
+    public Transition( string currentState, string nextState, GameEventObject gameEvent ) {
       if ( gameEvent == null ) {
-        Debug.LogWarning( $"transition from {currentState.name} to {nextState.name}" );
+        Debug.LogWarning( $"transition from {currentState} to {nextState}" );
         throw new ArgumentNullException( $"{nameof( gameEvent )}" );
       }
 
-      this.CurrentState = currentState.name;
-      this.NextState = nextState.name;
+      this.CurrentState = currentState;
+      this.NextState = nextState;
       this.TransitionEvent = gameEvent;
       this.Id = Guid.NewGuid();
     }

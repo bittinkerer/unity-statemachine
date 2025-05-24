@@ -25,13 +25,13 @@ namespace Packages.Estenis.StateMachine_
         || EditorSettings.enterPlayModeOptions == EnterPlayModeOptions.DisableDomainReload)
       {
 #endif
-        Initialize(_initialState, _stateToStateEntries);
+        Initialize(_initialState, _stateToStateEntries2);
 #if UNITY_EDITOR
       }
 #endif
 
     }
-    public abstract void Initialize(State initialState, List<StateToStateTransition> sts);
+    public abstract void Initialize(State initialState, List<StateToStateTransition2> sts);
   }
 
 

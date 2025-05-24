@@ -9,9 +9,9 @@ namespace Packages.Estenis.StateMachine_ {
   public sealed class TransitionTable : TransitionTableBase {
     public State                                      AnyState { get; private set; }
     public State                                      InitialState { get; private set; }
-    private Dictionary<State, HashSet<Transition>>    _transitions  = new();
+    private Dictionary<string, HashSet<Transition>>    _transitions  = new();
 
-    public override void Initialize( State initialState, List<StateToStateTransition> stateToState ) {
+    public override void Initialize( State initialState, List<StateToStateTransition2> stateToState ) {
       InitialState = initialState;
 
       // Add main transition-table transitions
@@ -21,22 +21,22 @@ namespace Packages.Estenis.StateMachine_ {
 
       // Add parent transition-table's transitions
       foreach ( var baseTable in _baseTables ) {
-        foreach ( var entry in baseTable._stateToStateEntries ) {
+        foreach ( var entry in baseTable._stateToStateEntries2 ) {
           AddTransition( entry );
         }
       }
     }
 
-    private void AddTransition( StateToStateTransition stateTransition ) {
-      State from      = stateTransition.FromState;
-      State to        = stateTransition.ToState;
+    private void AddTransition( StateToStateTransition2 stateTransition ) {
+      string from      = stateTransition.FromState;
+      string to        = stateTransition.ToState;
       var gameEvent   = stateTransition.GameEvent;
 
       var transition  = new Transition(from, to, gameEvent);
       AddTransition( from, transition );
     }
 
-    private void AddTransition( State from, Transition transition ) {
+    private void AddTransition( string from, Transition transition ) {
       if ( !_transitions.TryGetValue( from, out var transitions ) ) {
         transitions = new HashSet<Transition>();
         _transitions[from] = transitions;
@@ -62,7 +62,7 @@ namespace Packages.Estenis.StateMachine_ {
     public void OnStateChanged( int instanceId, string newState, Action<object, object> action ) {
       // Deactivate all except AnyState
       foreach ( var transition in _transitions
-              .Where( t => t.Key.name != ANY_STATE_NAME )
+              .Where( t => t.Key != ANY_STATE_NAME )
               .Select( kvp => kvp.Value )
               .SelectMany( v => v ) ) {
         transition.TransitionEvent.Unregister(
@@ -74,7 +74,7 @@ namespace Packages.Estenis.StateMachine_ {
 
       // Activate current
       _transitions
-          .Where( kvp => kvp.Key.name == newState || kvp.Key.name == ANY_STATE_NAME )
+          .Where( kvp => kvp.Key == newState || kvp.Key == ANY_STATE_NAME )
           .SelectMany( kvp => kvp.Value )
           .ForEach( t => t.TransitionEvent.Register(
               instanceId,
