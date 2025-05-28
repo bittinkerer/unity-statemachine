@@ -1,6 +1,6 @@
 {
   "name": "com.estenis.statemachine",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "displayName": "Finite State Machine",
   "description": "Scripts for events-based finite state machine",
   "unity": "2019.1",

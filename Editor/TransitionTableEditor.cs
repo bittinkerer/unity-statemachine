@@ -38,10 +38,8 @@ namespace Assets.Esteny.StateMachine_ {
   [CustomEditor( typeof( TransitionTableBase ), true )]
   public class TransitionTableEditor : Editor {
     private TransitionTableBase   _target;
-    private SerializedProperty    _initialState;
     private SerializedProperty    _initState;
     private ReorderableList       _stateToStateList;
-    private ReorderableList       _stateToStateList2;
     private ReorderableList       _baseTablesList;
     private ReorderableList       _referencesList;
     private string                _filter;
@@ -96,7 +94,6 @@ namespace Assets.Esteny.StateMachine_ {
         }
       }
 
-      _initialState = serializedObject.FindProperty( "_initialState" );
       _initState = serializedObject.FindProperty( "_initState" );
 
       _baseTablesList = new ReorderableList(
@@ -116,52 +113,14 @@ namespace Assets.Esteny.StateMachine_ {
         //drawHeaderCallback => EditorGUILayout.LabelField("Gooer")
       };
 
-      // Transitions
       _stateToStateList = new ReorderableList(
           serializedObject,
-          serializedObject.FindProperty( "_stateToStateEntries" ),
+          serializedObject.FindProperty( "_stateToStateEntries2" ),
           true, true, true, true ) {
         drawElementCallback = DrawStateToStateEntry,
         drawHeaderCallback = DrawTTableHeader,
       };
 
-      _stateToStateList2 = new ReorderableList(
-          serializedObject,
-          serializedObject.FindProperty( "_stateToStateEntries2" ),
-          true, true, true, true ) {
-        drawElementCallback = DrawStateToStateEntry2,
-        drawHeaderCallback = DrawTTableHeader2,
-      };
-
-      //SyncStateTransitions();
-    }
-
-    private bool _seeded = false;
-    // @TODO: Remove this method once we've transitioned fully to string-States
-    private void SyncStateTransitions( ) {
-      if ( _seeded ) {
-        return;
-      }
-      _seeded = true;
-      _target._stateToStateEntries2.Clear();
-      foreach ( var st1 in _stateToStateList.toList<StateToStateTransition>() ) {
-        _target._stateToStateEntries2.Add( new StateToStateTransition2 {
-          FromState = st1.FromState.name,
-          ToState = st1.ToState.name,
-          GameEvent = st1.GameEvent,
-        } );
-      }
-    }
-
-    private void DrawTTableHeader( Rect rect ) {
-      string from = "FROM";
-      string to   = "| TO";
-      string when = "| WHEN";
-
-      GUI.Label( new Rect( rect.x, rect.y, rect.width / 3, rect.height ), from );
-      GUI.Label( new Rect( rect.x + rect.width / 3, rect.y, rect.width / 3, rect.height ), $"{to,10}" );
-      GUI.Label( new Rect( rect.x + 2 * ( rect.width / 3 ), rect.y, rect.width / 3, rect.height ), $"{when,10}" );
-      GUI.Label( new Rect( rect.x + rect.width - 30, rect.y, 30, rect.height ), $"{_stateToStateList.count,2}" );
     }
 
     private void DrawBaseTTablesHeader( Rect rect ) {
@@ -185,9 +144,9 @@ namespace Assets.Esteny.StateMachine_ {
 
     private void DrawInspector( ) {
       // Draw Initial State
-      _initialState.objectReferenceValue =
-            EditorGUILayout.ObjectField(
-                "Initial State: ", _initialState.objectReferenceValue, typeof( Packages.Estenis.StateMachine_.State ), false );
+      //_initialState.objectReferenceValue =
+      //      EditorGUILayout.ObjectField(
+      //          "Initial State: ", _initialState.objectReferenceValue, typeof( Packages.Estenis.StateMachine_.State ), false );
 
       if ( _states.Count > 0 ) {
         int initIndex =
@@ -241,7 +200,7 @@ namespace Assets.Esteny.StateMachine_ {
 
           if ( GUILayout.Button( "SAVE" ) ) {
             _target.Initialize(
-                (Packages.Estenis.StateMachine_.State) _initialState.objectReferenceValue
+                /*(Packages.Estenis.StateMachine_.State) */_initState.stringValue
               , _stateToStateList.toList<StateToStateTransition2>() );
           }
         }
@@ -249,7 +208,7 @@ namespace Assets.Esteny.StateMachine_ {
       GUILayout.EndHorizontal();
 
       if ( GUILayout.Button( "TTABLES_SYNC" ) ) {
-        SyncStateTransitions();
+        //SyncStateTransitions();
       }
 
       EditorGUILayout.Space( 10 );
@@ -271,10 +230,10 @@ namespace Assets.Esteny.StateMachine_ {
       _previousTransitionType = _popupIndex;
       _previousFilter = _filter;
 
-      _stateToStateList.DoLayoutList();
+      //_stateToStateList.DoLayoutList();
 
       // Draw Transition Table 2
-      _stateToStateList2.DoLayoutList();
+      _stateToStateList.DoLayoutList();
 
     }
 
@@ -340,41 +299,20 @@ namespace Assets.Esteny.StateMachine_ {
       }
     }
 
-    private void DrawStateToStateEntry( Rect rect, int index, bool isActive, bool isFocused ) {
-      SerializedProperty element = _stateToStateList.serializedProperty.GetArrayElementAtIndex(index);
+    private void DrawTTableHeader( Rect rect ) {
+      string from = "FROM";
+      string to   = "| TO";
+      string when = "| WHEN";
 
-      SerializedProperty fromState  = element.FindPropertyRelative("FromState");
-      SerializedProperty toState    = element.FindPropertyRelative("ToState");
-      SerializedProperty gameEvent  = element.FindPropertyRelative("GameEvent");
-
-      rect.y += 2;
-      float fieldWidth = rect.width / 3f;
-
-      Rect fromRect = new(rect.x,                   rect.y, fieldWidth, EditorGUIUtility.singleLineHeight);
-      Rect toRect   = new(rect.x + fieldWidth,      rect.y, fieldWidth, EditorGUIUtility.singleLineHeight);
-      Rect whenRect = new(rect.x + fieldWidth * 2f, rect.y, fieldWidth, EditorGUIUtility.singleLineHeight);
-
-      float labelWidth = EditorGUIUtility.labelWidth;
-      EditorGUIUtility.labelWidth = rect.width / 23f;
-
-      fromState.objectReferenceValue =
-          EditorGUI.ObjectField(
-            fromRect, "", fromState.objectReferenceValue, typeof( Packages.Estenis.StateMachine_.State ), false );
-
-      toState.objectReferenceValue =
-          EditorGUI.ObjectField(
-            toRect, "->", toState.objectReferenceValue, typeof( Packages.Estenis.StateMachine_.State ), false );
-
-      gameEvent.objectReferenceValue =
-          EditorGUI.ObjectField(
-            whenRect, " :", gameEvent.objectReferenceValue, typeof( GameEventObject ), false );
-
-      EditorGUIUtility.labelWidth = labelWidth;
+      GUI.Label( new Rect( rect.x, rect.y, rect.width / 3, rect.height ), from );
+      GUI.Label( new Rect( rect.x + rect.width / 3, rect.y, rect.width / 3, rect.height ), $"{to,10}" );
+      GUI.Label( new Rect( rect.x + 2 * ( rect.width / 3 ), rect.y, rect.width / 3, rect.height ), $"{when,10}" );
+      GUI.Label( new Rect( rect.x + rect.width - 30, rect.y, 30, rect.height ), $"{_stateToStateList.count,2}" );
     }
 
-    private void DrawStateToStateEntry2( Rect rect, int index, bool isActive, bool isFocused ) {
+    private void DrawStateToStateEntry( Rect rect, int index, bool isActive, bool isFocused ) {
       // get data
-      SerializedProperty element = _stateToStateList2.serializedProperty.GetArrayElementAtIndex(index);
+      SerializedProperty element = _stateToStateList.serializedProperty.GetArrayElementAtIndex(index);
 
       SerializedProperty fromStateValue   = element.FindPropertyRelative("FromState");
       SerializedProperty toStateValue     = element.FindPropertyRelative("ToState");
@@ -427,22 +365,10 @@ namespace Assets.Esteny.StateMachine_ {
     }
 
     private void DrawReferenceEntry( Rect rect, int index, bool isActive, bool isFocused ) {
-      //SerializedProperty element = _referencesList.serializedProperty.GetArrayElementAtIndex(index);
       Rect ttableRect = new(rect.x, rect.y, rect.width, EditorGUIUtility.singleLineHeight);
       _references[index] =
           (GameObject) EditorGUI.ObjectField(
             ttableRect, "", _references[index], typeof( GameObject ), false );
-    }
-
-    private void DrawTTableHeader2( Rect rect ) {
-      string from = "FROM";
-      string to   = "| TO";
-      string when = "| WHEN";
-
-      GUI.Label( new Rect( rect.x, rect.y, rect.width / 3, rect.height ), from );
-      GUI.Label( new Rect( rect.x + rect.width / 3, rect.y, rect.width / 3, rect.height ), $"{to,10}" );
-      GUI.Label( new Rect( rect.x + 2 * ( rect.width / 3 ), rect.y, rect.width / 3, rect.height ), $"{when,10}" );
-      GUI.Label( new Rect( rect.x + rect.width - 30, rect.y, 30, rect.height ), $"{_stateToStateList2.count,2}" );
     }
 
     private IEnumerable<GameObject> FindPrefabReferences( string ttableName ) {

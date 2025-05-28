@@ -7,12 +7,12 @@ using System;
 namespace Packages.Estenis.StateMachine_ {
   [CreateAssetMenu( menuName = "EventsFSM/TransitionTable" )]
   public sealed class TransitionTable : TransitionTableBase {
-    public State                                      AnyState { get; private set; }
     public State                                      InitialState { get; private set; }
-    private Dictionary<string, HashSet<Transition>>    _transitions  = new();
+    public string                                     InitState { get; private set; }
+    private Dictionary<string, HashSet<Transition>>   _transitions  = new();
 
-    public override void Initialize( State initialState, List<StateToStateTransition2> stateToState ) {
-      InitialState = initialState;
+    public override void Initialize( string initialState, List<StateToStateTransition2> stateToState ) {
+      InitState = initialState;
 
       // Add main transition-table transitions
       foreach ( var entry in stateToState?.Where( e => e.IsValid() ) ) {

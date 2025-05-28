@@ -12,8 +12,8 @@ namespace Packages.Estenis.StateMachine_ {
     private bool                              _transitionDonePerFrame;  // only allow one transition per frame
 
     private void Awake( ) {
-      _currentState = _transitionTable.InitialState.name;
-      _transitionTable.OnStateChanged( EventId, _transitionTable.InitialState.name, _transitionTable_OnTransition );
+      _currentState = _transitionTable.InitState;
+      _transitionTable.OnStateChanged( EventId, _transitionTable.InitState, _transitionTable_OnTransition );
     }
 
     private void _transitionTable_OnTransition( object sender, object data ) {
