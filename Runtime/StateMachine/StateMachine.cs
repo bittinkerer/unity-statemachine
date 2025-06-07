@@ -49,9 +49,9 @@ namespace Packages.Estenis.StateMachine_ {
     }
 
     private void OnDisable( ) {
-      _currentState = _transitionTable.InitialState.name;
+      _currentState = _transitionTable.InitState;
       _onStateChangedEvent.Raise( EventId, this.gameObject, _currentState );
-      _transitionTable.OnStateChanged( EventId, _transitionTable.InitialState.name, _transitionTable_OnTransition );
+      _transitionTable.OnStateChanged( EventId, _transitionTable.InitState, _transitionTable_OnTransition );
     }
 
     private void OnDestroy( ) {

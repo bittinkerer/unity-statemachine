@@ -25,7 +25,14 @@ namespace Assets.Esteny.StateMachine_ {
           if ( propValue != null ) {
             Type t = Nullable.GetUnderlyingType(prop.FieldType) ?? prop.FieldType;
             if ( t.IsValueType ) continue;
-            object safeValue = Convert.ChangeType(propValue.objectReferenceValue, t);
+            object safeValue = null;
+            if ( safeValue == null && t == typeof( string ) ) {
+              safeValue = Convert.ChangeType( propValue.stringValue, t );
+            }
+            else {
+              safeValue = Convert.ChangeType(propValue.objectReferenceValue, t);
+            }
+            
             prop.SetValue( temp, safeValue );
           }
         }
@@ -143,11 +150,6 @@ namespace Assets.Esteny.StateMachine_ {
     }
 
     private void DrawInspector( ) {
-      // Draw Initial State
-      //_initialState.objectReferenceValue =
-      //      EditorGUILayout.ObjectField(
-      //          "Initial State: ", _initialState.objectReferenceValue, typeof( Packages.Estenis.StateMachine_.State ), false );
-
       if ( _states.Count > 0 ) {
         int initIndex =
         EditorGUILayout.Popup(
@@ -200,16 +202,12 @@ namespace Assets.Esteny.StateMachine_ {
 
           if ( GUILayout.Button( "SAVE" ) ) {
             _target.Initialize(
-                /*(Packages.Estenis.StateMachine_.State) */_initState.stringValue
+                _initState.stringValue
               , _stateToStateList.toList<StateToStateTransition2>() );
           }
         }
       }
       GUILayout.EndHorizontal();
-
-      if ( GUILayout.Button( "TTABLES_SYNC" ) ) {
-        //SyncStateTransitions();
-      }
 
       EditorGUILayout.Space( 10 );
       // Draw Transition Table
@@ -229,8 +227,6 @@ namespace Assets.Esteny.StateMachine_ {
       }
       _previousTransitionType = _popupIndex;
       _previousFilter = _filter;
-
-      //_stateToStateList.DoLayoutList();
 
       // Draw Transition Table 2
       _stateToStateList.DoLayoutList();

@@ -5,17 +5,17 @@ using UnityEngine;
 
 namespace Packages.Estenis.StateMachine_ {
   public class StateManager : EventMonoBehaviour {
+    [SerializeField] public TransitionTable   _transitionTable;
     [SerializeField] private GameEventObject  _stateChangeEvent;
     [SerializeField] private GameObject       _statesParentGO;
     [SerializeField] private GameObject       _sharedParentGO;
-    [SerializeField] public TransitionTable   _transitionTable;
 
     protected void Start( ) {
       // disable all state GOs
       DisableAllStatesGO();
 
       // enable intial state GO
-      EnableStateGO( _transitionTable.InitialState.name );
+      EnableStateGO( _transitionTable.InitState );
 
       // register to state change event
       _stateChangeEvent.Register( EventId, (Action<object, object>) OnStateChanged );
