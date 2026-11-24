@@ -63,6 +63,10 @@ namespace Packages.Estenis.StateMachine_ {
     }
 
     private void EnableStateGO( string state ) {
+      if ( string.IsNullOrEmpty( state ) ) {
+        Debug.LogError( $"[{this.name}] TransitionTable '{( _transitionTable != null ? _transitionTable.name : "none" )}' has no state to show (initial state is empty).", this );
+        return;
+      }
       if ( !_byState.TryGetValue( state, out var stateGO ) ) {
         var child = _statesParentGO.transform.Find( state ); // once per state name, then cached
         if ( child == null ) {
